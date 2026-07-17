@@ -40,7 +40,7 @@ One-shot batch upload without starting the server. Intended for CI pipelines, sc
 
 | Flag | Default | Description |
 |---|---|---|
-| `--collection` | — | Firestore collection path (required) |
+| `--collection` | — | Firestore collection path |
 | `--files` | — | Comma-separated list of file paths |
 | `--creds` | `./serviceAccountKey.json` | Path to service account JSON |
 | `--project` | — | Firebase project ID |

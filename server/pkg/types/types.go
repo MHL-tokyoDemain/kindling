@@ -30,12 +30,12 @@ type HealthResponse struct {
 	Status        string `json:"status"`
 	Version       string `json:"version"`
 	ProjectID     string `json:"project_id,omitempty"`
-	AuthMode      string `json:"auth_mode"`
-	UptimeSeconds int64  `json:"uptime_seconds"`
+	AuthMode      string `json:"auth_mode,omitempty"`
+	UptimeSeconds int64  `json:"uptime_seconds,omitempty"`
 }
 
 type ErrorResponse struct {
 	Success bool   `json:"success"`
-	Code    string `json:"code"`
+	Code    string `json:"code,omitempty"`
 	Error   string `json:"error"`
 }

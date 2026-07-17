@@ -30,7 +30,7 @@ func main() {
 
 	case "upload":
 		fs := flag.NewFlagSet("upload", flag.ExitOnError)
-		collection := fs.String("collection", "", "Firestore collection path (required)")
+		collection := fs.String("collection", "", "Firestore collection path")
 		files := fs.String("files", "", "Comma-separated list of file paths")
 		creds := fs.String("creds", "./serviceAccountKey.json", "Path to service account JSON")
 		project := fs.String("project", "", "Firebase project ID")
