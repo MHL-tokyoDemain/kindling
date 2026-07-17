@@ -4,7 +4,7 @@ Batch-upload seed data into Firebase Firestore without touching the Firebase UI.
 
 ## Prerequisites
 
-- Go 1.22+
+- Go 1.22
 
 ## Build
 
@@ -41,6 +41,7 @@ One-shot batch upload without starting the server. Intended for CI pipelines, sc
 | Flag | Default | Description |
 |---|---|---|
 | `--collection` | — | Firestore collection path (required) |
+| `--files` | — | Comma-separated list of file paths |
 | `--creds` | `./serviceAccountKey.json` | Path to service account JSON |
 | `--project` | — | Firebase project ID |
 | `--max-file-size` | `1048576` | Per-file size limit in bytes |

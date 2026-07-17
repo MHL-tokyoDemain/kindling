@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/kindling/kindling/cmd"
 )
@@ -22,17 +23,28 @@ func main() {
 		project := fs.String("project", "", "Firebase project ID")
 		maxFileSize := fs.Int64("max-file-size", 1048576, "Per-file size limit in bytes")
 		fs.Parse(os.Args[2:])
-		cmd.RunServer(*port, *creds, *project, *maxFileSize)
+		if err := cmd.RunServer(*port, *creds, *project, *maxFileSize); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
 
 	case "upload":
 		fs := flag.NewFlagSet("upload", flag.ExitOnError)
 		collection := fs.String("collection", "", "Firestore collection path (required)")
+		files := fs.String("files", "", "Comma-separated list of file paths")
 		creds := fs.String("creds", "./serviceAccountKey.json", "Path to service account JSON")
 		project := fs.String("project", "", "Firebase project ID")
 		maxFileSize := fs.Int64("max-file-size", 1048576, "Per-file size limit in bytes")
 		concurrency := fs.Int("concurrency", 10, "Max parallel Firestore writes")
 		fs.Parse(os.Args[2:])
-		cmd.RunUpload(*collection, []string{}, *creds, *project, *maxFileSize, *concurrency)
+		var fileList []string
+		if *files != "" {
+			fileList = strings.Split(*files, ",")
+		}
+		if err := cmd.RunUpload(*collection, fileList, *creds, *project, *maxFileSize, *concurrency); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
 
 	default:
 		printUsage()

@@ -1,13 +1,5 @@
 package types
 
-type ServerConfig struct {
-	Port        int
-	CredsPath   string
-	ProjectID   string
-	MaxFileSize int64
-	Concurrency int
-}
-
 type UploadDocument struct {
 	Filename    string `json:"filename"`
 	Content     string `json:"content"`
