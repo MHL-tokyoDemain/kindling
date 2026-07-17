@@ -4,20 +4,35 @@
     "type": "split",
     "children": [
       {
-        "id": "40f5c259f91e4704",
+        "id": "cece4c0852ea1f3f",
         "type": "tabs",
         "children": [
           {
-            "id": "0c75b01d5a31ec6d",
+            "id": "812f6c54b444a56e",
             "type": "leaf",
             "state": {
-              "type": "empty",
+              "type": "graph",
               "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          },
+          {
+            "id": "aeebc01f48498b35",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Architecture/Architecture.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "Architecture"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -90,6 +105,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Architecture/Architecture.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -99,7 +115,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks"
+              "title": "Backlinks for Architecture"
             }
           },
           {
@@ -108,11 +124,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Architecture/Architecture.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links"
+              "title": "Outgoing links from Architecture"
             }
           },
           {
@@ -150,12 +167,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "Architecture/Architecture.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of Architecture"
             }
           }
         ]
@@ -176,6 +194,15 @@
       "bases:Create new base": false
     }
   },
-  "active": "0c75b01d5a31ec6d",
-  "lastOpenFiles": []
+  "active": "aeebc01f48498b35",
+  "lastOpenFiles": [
+    "Development/Roadmap.md",
+    "Development/Tech Stack.md",
+    "Architecture/Architecture.md",
+    "Academic/Academic Context.md",
+    "Kindling - Project Overview.md",
+    "Development",
+    "Academic",
+    "Architecture"
+  ]
 }
