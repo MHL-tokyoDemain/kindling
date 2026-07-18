@@ -10,7 +10,7 @@ import (
 func (s *Server) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	resp := types.HealthResponse{
 		Status:  "ok",
-		Version: "0.1.0",
+		Version: types.Version,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
