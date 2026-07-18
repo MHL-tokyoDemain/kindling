@@ -1,2 +1,6 @@
 # go build output
 kindling
+kindling-*
+
+# coverage output
+coverage.out
