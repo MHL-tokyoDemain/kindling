@@ -11,33 +11,42 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	os.Exit(run(os.Args))
+}
+
+func run(args []string) int {
+	if len(args) < 2 {
 		printUsage()
-		os.Exit(2)
+		return 2
 	}
 
-	switch os.Args[1] {
+	switch args[1] {
 	case "server":
-		fs := flag.NewFlagSet("server", flag.ExitOnError)
+		fs := flag.NewFlagSet("server", flag.ContinueOnError)
 		port := fs.Int("port", envInt("KINDLING_PORT", 9876), "Port to listen on")
 		creds := fs.String("creds", envString("GOOGLE_APPLICATION_CREDENTIALS", "./serviceAccountKey.json"), "Path to service account JSON")
 		project := fs.String("project", envString("FIREBASE_PROJECT_ID", ""), "Firebase project ID")
 		maxFileSize := fs.Int64("max-file-size", envInt64("KINDLING_MAX_FILE_SIZE", 1048576), "Per-file size limit in bytes")
-		fs.Parse(os.Args[2:])
+		if err := fs.Parse(args[2:]); err != nil {
+			return 2
+		}
 		if err := cmd.RunServer(*port, *creds, *project, *maxFileSize); err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
+			return 1
 		}
+		return 0
 
 	case "upload":
-		fs := flag.NewFlagSet("upload", flag.ExitOnError)
+		fs := flag.NewFlagSet("upload", flag.ContinueOnError)
 		collection := fs.String("collection", "", "Firestore collection path")
 		files := fs.String("files", "", "Comma-separated list of file paths")
 		creds := fs.String("creds", envString("GOOGLE_APPLICATION_CREDENTIALS", "./serviceAccountKey.json"), "Path to service account JSON")
 		project := fs.String("project", envString("FIREBASE_PROJECT_ID", ""), "Firebase project ID")
 		maxFileSize := fs.Int64("max-file-size", envInt64("KINDLING_MAX_FILE_SIZE", 1048576), "Per-file size limit in bytes")
 		concurrency := fs.Int("concurrency", 10, "Max parallel Firestore writes")
-		fs.Parse(os.Args[2:])
+		if err := fs.Parse(args[2:]); err != nil {
+			return 2
+		}
 
 		var fileList []string
 		if *files != "" {
@@ -48,11 +57,11 @@ func main() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		}
-		os.Exit(exitCode)
+		return exitCode
 
 	default:
 		printUsage()
-		os.Exit(2)
+		return 2
 	}
 }
 
