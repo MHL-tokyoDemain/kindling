@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"io"
 	"net/http"
 
@@ -12,15 +13,16 @@ func (s *Server) UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		writeJSON(w, http.StatusRequestEntityTooLarge, types.ErrorResponse{
-			Success: false,
-			Code:    types.ErrPayloadTooLarge,
-			Error:   "request body exceeds size limit",
-		})
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			WriteError(w, types.ErrPayloadTooLarge, "request body exceeds size limit")
+		} else {
+			WriteError(w, types.ErrInternal, "failed to read request body")
+		}
 		return
 	}
 	_ = body
 
 	// TODO(#13): Implement real upload handler with parsing, validation, Firestore writes
-	writeJSON(w, http.StatusNotImplemented, map[string]string{"status": "not_implemented"})
+	WriteJSON(w, http.StatusNotImplemented, map[string]string{"status": "not_implemented"})
 }

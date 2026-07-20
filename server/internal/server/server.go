@@ -141,7 +141,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 	slog.Info("shutdown requested via /shutdown")
 
-	writeJSON(w, http.StatusOK, types.ShutdownResponse{
+	WriteJSON(w, http.StatusOK, types.ShutdownResponse{
 		Success: true,
 		Status:  "shutting_down",
 	})
@@ -153,5 +153,5 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAuth(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusNotImplemented, map[string]string{"status": "not_implemented"})
+	WriteJSON(w, http.StatusNotImplemented, map[string]string{"status": "not_implemented"})
 }

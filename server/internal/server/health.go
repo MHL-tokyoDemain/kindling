@@ -17,5 +17,5 @@ func (s *Server) HealthHandler(w http.ResponseWriter, r *http.Request) {
 		AuthMode:      "service_account",
 		UptimeSeconds: uptime,
 	}
-	writeJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, resp)
 }
