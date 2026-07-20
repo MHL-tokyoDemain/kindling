@@ -13,8 +13,18 @@ import (
 )
 
 func RunServer(port int, credsPath, projectID string, maxFileSize int64) error {
-	srv := server.New(port)
-	// TODO: pass credsPath, projectID, maxFileSize to server config (issue #11)
+	cfg := server.Config{
+		Port:            port,
+		CredentialsFile: credsPath,
+		ProjectID:       projectID,
+		MaxFileSize:     maxFileSize,
+	}
+
+	srv, err := server.New(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create server: %w", err)
+	}
+
 	return srv.Start()
 }
 

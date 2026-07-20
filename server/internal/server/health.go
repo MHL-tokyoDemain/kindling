@@ -1,18 +1,21 @@
 package server
 
 import (
-	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/kindling/kindling/pkg/types"
 )
 
 func (s *Server) HealthHandler(w http.ResponseWriter, r *http.Request) {
+	uptime := int64(time.Since(s.startTime).Seconds())
+
 	resp := types.HealthResponse{
-		Status:  "ok",
-		Version: types.Version,
+		Status:        "ok",
+		Version:       types.Version,
+		ProjectID:     s.cfg.ProjectID,
+		AuthMode:      "service_account",
+		UptimeSeconds: uptime,
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(resp)
+	writeJSON(w, http.StatusOK, resp)
 }
