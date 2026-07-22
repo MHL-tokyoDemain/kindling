@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -13,14 +14,31 @@ import (
 )
 
 func RunServer(port int, credsPath, projectID string, maxFileSize int64) error {
+	ctx := context.Background()
+
+	// Resolve project ID before starting the server.
+	resolvedProjectID, err := server.ResolveProjectID(ctx, projectID, credsPath)
+	if err != nil {
+		return fmt.Errorf("project ID resolution failed: %w", err)
+	}
+
+	// Create the Firestore client that the upload handler will use.
+	fw, err := firestore.NewClient(ctx, firestore.Config{
+		CredentialsFile: credsPath,
+		ProjectID:       resolvedProjectID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create Firestore client: %w", err)
+	}
+
 	cfg := server.Config{
 		Port:            port,
 		CredentialsFile: credsPath,
-		ProjectID:       projectID,
+		ProjectID:       resolvedProjectID,
 		MaxFileSize:     maxFileSize,
 	}
 
-	srv, err := server.New(cfg)
+	srv, err := server.New(cfg, fw)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
@@ -37,13 +55,14 @@ func RunUpload(collection string, files []string, credsPath, projectID string, m
 	}
 
 	ctx := context.Background()
-	_ = projectID
-	_ = concurrency
 
-	// TODO(#7): Initialize Firestore client with proper project binding (issue #10)
-	firestoreClient, err := firestore.NewClient(ctx, credsPath)
+	firestoreCfg := firestore.Config{
+		CredentialsFile: credsPath,
+		ProjectID:       projectID,
+	}
+	firestoreClient, err := firestore.NewClient(ctx, firestoreCfg)
 	if err != nil {
-		return 3, fmt.Errorf("authentication failed: %w", err)
+		return 3, fmt.Errorf("failed to create Firestore client: %w", err)
 	}
 	defer firestoreClient.Close()
 
@@ -73,12 +92,25 @@ func RunUpload(collection string, files []string, credsPath, projectID string, m
 			continue
 		}
 
-		// TODO(#10): Write document to Firestore via firestoreClient and capture document ID
-		_ = firestoreClient
+		docID, err := firestoreClient.WriteDocument(ctx, collection, result.Document)
+		if err != nil {
+			var writeErr *firestore.WriteError
+			code := ""
+			if errors.As(err, &writeErr) {
+				code = writeErr.Code
+			}
+			failed = append(failed, types.UploadResult{
+				Filename: filePath,
+				Status:   "failed",
+				Code:     code,
+				Error:    err.Error(),
+			})
+			continue
+		}
 
 		uploaded = append(uploaded, types.UploadResult{
 			Filename:   filePath,
-			DocumentID: "",
+			DocumentID: docID,
 			Status:     "created",
 		})
 	}
