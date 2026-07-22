@@ -38,7 +38,7 @@ func (e *emulatorWriter) ProjectID() string {
 }
 
 const emulatorProject = "test-project"
-const emulatorCollection = "projects/test-project/databases/(default)/documents/integration-test"
+const emulatorBasePath = "projects/test-project/databases/(default)/documents"
 
 func emulatorConfig() Config {
 	return Config{
@@ -71,6 +71,7 @@ func TestEmulatorUploadJSON(t *testing.T) {
 	client, fw := newEmulatorClient(t)
 	defer client.Close()
 
+	coll := emulatorBasePath + "/json-test"
 	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
 
 	body := fmt.Sprintf(`{
@@ -78,7 +79,7 @@ func TestEmulatorUploadJSON(t *testing.T) {
 		"documents": [
 			{"filename":"sensor.json","content":"{\"temp\":22,\"unit\":\"c\"}","content_type":"json"}
 		]
-	}`, emulatorCollection)
+	}`, coll)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/upload", strings.NewReader(body))
@@ -92,7 +93,7 @@ func TestEmulatorUploadJSON(t *testing.T) {
 		t.Fatalf("expected 200, got %d", resp.StatusCode)
 	}
 
-	docs, err := client.Collection(emulatorCollection).Documents(context.Background()).GetAll()
+	docs, err := client.Collection(coll).Documents(context.Background()).GetAll()
 	if err != nil {
 		t.Fatalf("failed to query emulator: %v", err)
 	}
@@ -106,6 +107,7 @@ func TestEmulatorUploadText(t *testing.T) {
 	client, fw := newEmulatorClient(t)
 	defer client.Close()
 
+	coll := emulatorBasePath + "/text-test"
 	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
 
 	body := fmt.Sprintf(`{
@@ -113,7 +115,7 @@ func TestEmulatorUploadText(t *testing.T) {
 		"documents": [
 			{"filename":"log.txt","content":"calibration OK","content_type":"text"}
 		]
-	}`, emulatorCollection)
+	}`, coll)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/upload", strings.NewReader(body))
@@ -127,7 +129,7 @@ func TestEmulatorUploadText(t *testing.T) {
 		t.Fatalf("expected 200, got %d", resp.StatusCode)
 	}
 
-	docs, err := client.Collection(emulatorCollection).Documents(context.Background()).GetAll()
+	docs, err := client.Collection(coll).Documents(context.Background()).GetAll()
 	if err != nil {
 		t.Fatalf("failed to query emulator: %v", err)
 	}
@@ -138,16 +140,18 @@ func TestEmulatorUploadText(t *testing.T) {
 
 func TestEmulatorInvalidJSON(t *testing.T) {
 	skipIfNoEmulator(t)
-	_, fw := newEmulatorClient(t)
+	client, fw := newEmulatorClient(t)
+	defer client.Close()
 
 	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
 
+	coll := emulatorBasePath + "/invalid-json"
 	body := fmt.Sprintf(`{
 		"collection": %q,
 		"documents": [
 			{"filename":"bad.json","content":"{invalid}","content_type":"json"}
 		]
-	}`, emulatorCollection)
+	}`, coll)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/upload", strings.NewReader(body))
@@ -164,11 +168,12 @@ func TestEmulatorInvalidJSON(t *testing.T) {
 
 func TestEmulatorEmptyBatch(t *testing.T) {
 	skipIfNoEmulator(t)
-	_, fw := newEmulatorClient(t)
+	client, fw := newEmulatorClient(t)
+	defer client.Close()
 
 	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
 
-	body := fmt.Sprintf(`{"collection": %q, "documents": []}`, emulatorCollection)
+	body := fmt.Sprintf(`{"collection": %q, "documents": []}`, emulatorBasePath+"/empty-batch")
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/upload", strings.NewReader(body))
@@ -185,7 +190,8 @@ func TestEmulatorEmptyBatch(t *testing.T) {
 
 func TestEmulatorProjectMismatch(t *testing.T) {
 	skipIfNoEmulator(t)
-	_, fw := newEmulatorClient(t)
+	client, fw := newEmulatorClient(t)
+	defer client.Close()
 
 	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
 
@@ -214,6 +220,7 @@ func TestEmulatorConcurrentBatch(t *testing.T) {
 	client, fw := newEmulatorClient(t)
 	defer client.Close()
 
+	coll := emulatorBasePath + "/concurrent-batch"
 	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
 
 	docs := make([]string, 50)
@@ -221,7 +228,7 @@ func TestEmulatorConcurrentBatch(t *testing.T) {
 		docs[i] = fmt.Sprintf(`{"filename":"f%d.json","content":"{\"i\":%d}","content_type":"json"}`, i, i)
 	}
 
-	body := fmt.Sprintf(`{"collection":%q,"documents":[%s]}`, emulatorCollection, strings.Join(docs, ","))
+	body := fmt.Sprintf(`{"collection":%q,"documents":[%s]}`, coll, strings.Join(docs, ","))
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/upload", strings.NewReader(body))
@@ -235,7 +242,7 @@ func TestEmulatorConcurrentBatch(t *testing.T) {
 		t.Fatalf("expected 200, got %d", resp.StatusCode)
 	}
 
-	snapshot, err := client.Collection(emulatorCollection).Documents(context.Background()).GetAll()
+	snapshot, err := client.Collection(coll).Documents(context.Background()).GetAll()
 	if err != nil {
 		t.Fatalf("failed to query emulator: %v", err)
 	}
