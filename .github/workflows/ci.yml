@@ -39,6 +39,25 @@ jobs:
       - name: Vet
         run: cd server && go vet ./...
 
+  integration:
+    name: Integration tests (Firestore emulator)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install Java (emulator dependency)
+        run: sudo apt-get update && sudo apt-get install -y default-jre-headless
+
+      - name: Install firebase-tools
+        run: npm install -g firebase-tools
+
+      - name: Run integration tests
+        run: make test-integration
+
   build:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

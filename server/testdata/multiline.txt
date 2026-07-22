@@ -1,0 +1,5 @@
+Batch upload test run
+Date: 2026-05-21
+Sensor: temp-01
+Reading: 23.5°C
+Status: OK

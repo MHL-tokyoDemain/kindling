@@ -1,0 +1,1 @@
+{"device": {"id": "abc-123", "location": {"lat": 37.7749, "lng": -122.4194}}, "readings": [{"time": "2026-05-21T10:00:00Z", "value": 42}], "metadata": {"tags": ["production", "sensor-a"], "active": true}}

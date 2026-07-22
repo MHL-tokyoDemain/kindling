@@ -1,7 +1,7 @@
 SERVER_DIR = server
 BUILD_FLAGS = -tags netgo,osusergo -trimpath -ldflags="-s -w -buildid="
 
-.PHONY: build test test-integration lint cover clean setup
+.PHONY: build test test-integration emulator-start lint cover clean setup
 
 setup:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
@@ -16,6 +16,9 @@ test:
 
 test-integration:
 	cd $(SERVER_DIR) && firebase emulators:exec --only firestore 'go test -tags=integration ./...'
+
+emulator-start:
+	cd $(SERVER_DIR) && firebase emulators:start --only firestore &
 
 lint:
 	cd $(SERVER_DIR) && golangci-lint run && gosec ./...
