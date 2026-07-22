@@ -4,3 +4,6 @@ kindling-*
 
 # coverage output
 coverage.out
+
+# audit log
+kindling_audit.log

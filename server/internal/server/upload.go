@@ -34,7 +34,7 @@ type docResult struct {
 // It validates the request, processes each document concurrently up to cfg.Concurrency
 // goroutines, writes successful documents to Firestore, and returns a 200 (all success)
 // or 207 (partial success) response.
-func HandleUpload(fw firestoreWriter, parse parserFunc, cfg Config) http.HandlerFunc {
+func HandleUpload(fw firestoreWriter, parse parserFunc, cfg Config, auditLogger *AuditLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 1. Enforce body size limit — checked first regardless of other configuration.
 		r.Body = http.MaxBytesReader(w, r.Body, cfg.MaxFileSize)
@@ -89,7 +89,10 @@ func HandleUpload(fw firestoreWriter, parse parserFunc, cfg Config) http.Handler
 			return
 		}
 
-		// 5. Process documents concurrently.
+		// 5. Generate transaction ID for audit logging.
+		transactionID := TransactionID()
+
+		// 6. Process documents concurrently.
 		concurrency := cfg.Concurrency
 		if concurrency <= 0 {
 			concurrency = 10
@@ -105,13 +108,24 @@ func HandleUpload(fw firestoreWriter, parse parserFunc, cfg Config) http.Handler
 			go func(idx int, doc types.Document) {
 				defer wg.Done()
 				defer func() { <-sem }()
-				// Each goroutine writes to its own pre-allocated index — no mutex needed.
-				results[idx] = processDocument(r.Context(), doc, req.Collection, parse, fw, cfg.MaxFileSize)
+				res := processDocument(r.Context(), doc, req.Collection, parse, fw, cfg.MaxFileSize)
+				results[idx] = res
+				if auditLogger != nil {
+					if res.uploaded != nil {
+						auditLogger.Log(AuditLevelINFO, transactionID, doc.Filename, req.Collection, res.uploaded.DocumentID)
+					} else if res.failed != nil {
+						outcome := res.failed.Code
+						if outcome == "" {
+							outcome = types.ErrInternal
+						}
+						auditLogger.Log(AuditLevelERROR, transactionID, doc.Filename, req.Collection, outcome)
+					}
+				}
 			}(i, doc)
 		}
 		wg.Wait()
 
-		// 6. Aggregate results.
+		// 7. Aggregate results.
 		uploaded := make([]types.UploadResult, 0, len(req.Documents))
 		failed := make([]types.UploadResult, 0)
 		for _, res := range results {

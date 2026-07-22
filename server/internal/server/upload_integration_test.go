@@ -72,7 +72,7 @@ func TestEmulatorUploadJSON(t *testing.T) {
 	defer client.Close()
 
 	coll := emulatorBasePath + "/json-test"
-	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
+	handler := HandleUpload(fw, parser.Parse, emulatorConfig(), nil)
 
 	body := fmt.Sprintf(`{
 		"collection": %q,
@@ -108,7 +108,7 @@ func TestEmulatorUploadText(t *testing.T) {
 	defer client.Close()
 
 	coll := emulatorBasePath + "/text-test"
-	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
+	handler := HandleUpload(fw, parser.Parse, emulatorConfig(), nil)
 
 	body := fmt.Sprintf(`{
 		"collection": %q,
@@ -143,7 +143,7 @@ func TestEmulatorInvalidJSON(t *testing.T) {
 	client, fw := newEmulatorClient(t)
 	defer client.Close()
 
-	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
+	handler := HandleUpload(fw, parser.Parse, emulatorConfig(), nil)
 
 	coll := emulatorBasePath + "/invalid-json"
 	body := fmt.Sprintf(`{
@@ -171,7 +171,7 @@ func TestEmulatorEmptyBatch(t *testing.T) {
 	client, fw := newEmulatorClient(t)
 	defer client.Close()
 
-	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
+	handler := HandleUpload(fw, parser.Parse, emulatorConfig(), nil)
 
 	body := fmt.Sprintf(`{"collection": %q, "documents": []}`, emulatorBasePath+"/empty-batch")
 
@@ -193,7 +193,7 @@ func TestEmulatorProjectMismatch(t *testing.T) {
 	client, fw := newEmulatorClient(t)
 	defer client.Close()
 
-	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
+	handler := HandleUpload(fw, parser.Parse, emulatorConfig(), nil)
 
 	body := `{
 		"collection": "projects/wrong-project/databases/(default)/documents/col",
@@ -221,7 +221,7 @@ func TestEmulatorConcurrentBatch(t *testing.T) {
 	defer client.Close()
 
 	coll := emulatorBasePath + "/concurrent-batch"
-	handler := HandleUpload(fw, parser.Parse, emulatorConfig())
+	handler := HandleUpload(fw, parser.Parse, emulatorConfig(), nil)
 
 	docs := make([]string, 50)
 	for i := range docs {
