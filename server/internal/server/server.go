@@ -23,15 +23,17 @@ type Config struct {
 	MaxFileSize     int64
 	Concurrency     int
 	LogLevel        string
+	AuditLogPath    string
 }
 
 type Server struct {
-	cfg        Config
-	fw         firestoreWriter
-	httpSrv    *http.Server
-	mux        *http.ServeMux
-	startTime  time.Time
-	shutdownCh chan struct{}
+	cfg         Config
+	fw          firestoreWriter
+	auditLogger *AuditLogger
+	httpSrv     *http.Server
+	mux         *http.ServeMux
+	startTime   time.Time
+	shutdownCh  chan struct{}
 }
 
 func New(cfg Config, fw firestoreWriter) (*Server, error) {
@@ -44,16 +46,25 @@ func New(cfg Config, fw firestoreWriter) (*Server, error) {
 	if cfg.LogLevel == "" {
 		cfg.LogLevel = "info"
 	}
+	if cfg.AuditLogPath == "" {
+		cfg.AuditLogPath = "./kindling_audit.log"
+	}
 
 	setupLogging(cfg.LogLevel)
 
+	auditLogger, err := NewAuditLogger(cfg.AuditLogPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create audit logger: %w", err)
+	}
+
 	mux := http.NewServeMux()
 	s := &Server{
-		cfg:        cfg,
-		fw:         fw,
-		mux:        mux,
-		startTime:  time.Now(),
-		shutdownCh: make(chan struct{}),
+		cfg:         cfg,
+		fw:          fw,
+		auditLogger: auditLogger,
+		mux:         mux,
+		startTime:   time.Now(),
+		shutdownCh:  make(chan struct{}),
 	}
 
 	s.registerRoutes()
@@ -88,7 +99,7 @@ func setupLogging(level string) {
 
 func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /health", s.HealthHandler)
-	s.mux.HandleFunc("POST /upload", HandleUpload(s.fw, parser.Parse, s.cfg))
+	s.mux.HandleFunc("POST /upload", HandleUpload(s.fw, parser.Parse, s.cfg, s.auditLogger))
 	s.mux.HandleFunc("POST /shutdown", s.handleShutdown)
 	s.mux.HandleFunc("POST /auth", s.handleAuth)
 }
@@ -138,12 +149,19 @@ func (s *Server) Start() error {
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	slog.Info("shutting down server")
+	// Drain HTTP server first so in-flight requests can finish logging.
+	err := s.httpSrv.Shutdown(ctx)
 	if s.fw != nil {
-		if err := s.fw.Close(); err != nil {
-			slog.Warn("error closing Firestore client", "error", err)
+		if cerr := s.fw.Close(); cerr != nil {
+			slog.Warn("error closing Firestore client", "error", cerr)
 		}
 	}
-	return s.httpSrv.Shutdown(ctx)
+	if s.auditLogger != nil {
+		if cerr := s.auditLogger.Close(); cerr != nil {
+			slog.Warn("error closing audit logger", "error", cerr)
+		}
+	}
+	return err
 }
 
 func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {

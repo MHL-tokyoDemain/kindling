@@ -70,7 +70,7 @@ func uploadCfg() Config {
 
 func doUpload(t *testing.T, fw firestoreWriter, requestBody string) *http.Response {
 	t.Helper()
-	h := HandleUpload(fw, parser.Parse, uploadCfg())
+	h := HandleUpload(fw, parser.Parse, uploadCfg(), nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/upload", strings.NewReader(requestBody))
 	r.Header.Set("Content-Type", "application/json")
@@ -101,7 +101,7 @@ func decodeErrorResponse(t *testing.T, resp *http.Response) types.ErrorResponse 
 func TestHandleUploadNoProjectID(t *testing.T) {
 	cfg := uploadCfg()
 	cfg.ProjectID = ""
-	h := HandleUpload(successWriter(), parser.Parse, cfg)
+	h := HandleUpload(successWriter(), parser.Parse, cfg, nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/upload", strings.NewReader(`{}`))
 	h.ServeHTTP(w, r)
@@ -116,7 +116,7 @@ func TestHandleUploadNoProjectID(t *testing.T) {
 }
 
 func TestHandleUploadNilFirestoreWriter(t *testing.T) {
-	h := HandleUpload(nil, parser.Parse, uploadCfg())
+	h := HandleUpload(nil, parser.Parse, uploadCfg(), nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/upload", strings.NewReader(`{}`))
 	h.ServeHTTP(w, r)
@@ -131,7 +131,7 @@ func TestHandleUploadNilFirestoreWriter(t *testing.T) {
 func TestHandleUploadBodyTooLarge(t *testing.T) {
 	cfg := uploadCfg()
 	cfg.MaxFileSize = 1024
-	h := HandleUpload(successWriter(), parser.Parse, cfg)
+	h := HandleUpload(successWriter(), parser.Parse, cfg, nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/upload", strings.NewReader(strings.Repeat("a", 2048)))
 	h.ServeHTTP(w, r)
