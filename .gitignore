@@ -1,0 +1,36 @@
+# ── Go ──────────────────────────────────────────────────────────────
+server/kindling
+server/kindling-*
+server/coverage.out
+server/vendor/
+
+# ── Node / VS Code Extension ──────────────────────────────────────
+extension/node_modules/
+extension/out/
+extension/dist/
+*.vsix
+
+# ── Secrets ────────────────────────────────────────────────────────
+*serviceAccountKey*.json
+*.p12
+*.pem
+credentials.json
+.env
+.env.local
+
+# ── OS ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── IDE ────────────────────────────────────────────────────────────
+.idea/
+
+# ── Logs ───────────────────────────────────────────────────────────
+*.log
+kindling_audit.log
+
+# ── Build artifacts ───────────────────────────────────────────────
+*.tar.gz
+*.zip
