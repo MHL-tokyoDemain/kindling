@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewValidConfig(t *testing.T) {
-	s, err := New(Config{Port: 9876})
+	s, err := New(Config{Port: 9876}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -21,7 +21,7 @@ func TestNewValidConfig(t *testing.T) {
 }
 
 func TestNewDefaults(t *testing.T) {
-	s, err := New(Config{})
+	s, err := New(Config{}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestNewDefaults(t *testing.T) {
 }
 
 func TestHealthHandler(t *testing.T) {
-	s, err := New(Config{Port: 9876, ProjectID: "test-project"})
+	s, err := New(Config{Port: 9876, ProjectID: "test-project"}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestHealthHandler(t *testing.T) {
 }
 
 func TestCORSMiddleware(t *testing.T) {
-	s, err := New(Config{Port: 9876})
+	s, err := New(Config{Port: 9876}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestCORSMiddleware(t *testing.T) {
 }
 
 func TestCORSPreflight(t *testing.T) {
-	s, err := New(Config{Port: 9876})
+	s, err := New(Config{Port: 9876}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -118,28 +118,8 @@ func TestCORSPreflight(t *testing.T) {
 	}
 }
 
-func TestUploadHandlerReturnsNotImplemented(t *testing.T) {
-	s, err := New(Config{Port: 9876})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	body := strings.NewReader(`{"collection":"test","documents":[]}`)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest("POST", "/upload", body)
-	r.Header.Set("Content-Type", "application/json")
-	s.ServeHTTP(w, r)
-
-	resp := w.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusNotImplemented {
-		t.Errorf("expected 501 Not Implemented, got %d", resp.StatusCode)
-	}
-}
-
 func TestUploadBodyLimit(t *testing.T) {
-	s, err := New(Config{Port: 9876})
+	s, err := New(Config{Port: 9876, ProjectID: "test-project", MaxFileSize: 1048576}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -165,7 +145,7 @@ func TestUploadBodyLimit(t *testing.T) {
 }
 
 func TestShutdownHandler(t *testing.T) {
-	s, err := New(Config{Port: 9876})
+	s, err := New(Config{Port: 9876}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -194,7 +174,7 @@ func TestShutdownHandler(t *testing.T) {
 }
 
 func TestAuthHandlerReturnsNotImplemented(t *testing.T) {
-	s, err := New(Config{Port: 9876})
+	s, err := New(Config{Port: 9876}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -212,7 +192,7 @@ func TestAuthHandlerReturnsNotImplemented(t *testing.T) {
 }
 
 func TestShutdown(t *testing.T) {
-	s, err := New(Config{Port: 9876})
+	s, err := New(Config{Port: 9876}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -226,7 +206,7 @@ func TestShutdown(t *testing.T) {
 }
 
 func Test404ForUnknownRoute(t *testing.T) {
-	s, err := New(Config{Port: 9876})
+	s, err := New(Config{Port: 9876}, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

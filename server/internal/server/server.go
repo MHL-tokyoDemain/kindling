@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/kindling/kindling/internal/parser"
 	"github.com/kindling/kindling/pkg/types"
 )
 
@@ -20,18 +21,20 @@ type Config struct {
 	CredentialsFile string
 	ProjectID       string
 	MaxFileSize     int64
+	Concurrency     int
 	LogLevel        string
 }
 
 type Server struct {
 	cfg        Config
+	fw         firestoreWriter
 	httpSrv    *http.Server
 	mux        *http.ServeMux
 	startTime  time.Time
 	shutdownCh chan struct{}
 }
 
-func New(cfg Config) (*Server, error) {
+func New(cfg Config, fw firestoreWriter) (*Server, error) {
 	if cfg.Port <= 0 {
 		cfg.Port = 9876
 	}
@@ -47,6 +50,7 @@ func New(cfg Config) (*Server, error) {
 	mux := http.NewServeMux()
 	s := &Server{
 		cfg:        cfg,
+		fw:         fw,
 		mux:        mux,
 		startTime:  time.Now(),
 		shutdownCh: make(chan struct{}),
@@ -84,7 +88,7 @@ func setupLogging(level string) {
 
 func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /health", s.HealthHandler)
-	s.mux.HandleFunc("POST /upload", s.UploadHandler)
+	s.mux.HandleFunc("POST /upload", HandleUpload(s.fw, parser.Parse, s.cfg))
 	s.mux.HandleFunc("POST /shutdown", s.handleShutdown)
 	s.mux.HandleFunc("POST /auth", s.handleAuth)
 }
@@ -134,7 +138,11 @@ func (s *Server) Start() error {
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	slog.Info("shutting down server")
-	// TODO(#10): Close Firestore client here
+	if s.fw != nil {
+		if err := s.fw.Close(); err != nil {
+			slog.Warn("error closing Firestore client", "error", err)
+		}
+	}
 	return s.httpSrv.Shutdown(ctx)
 }
 

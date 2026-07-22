@@ -14,14 +14,31 @@ import (
 )
 
 func RunServer(port int, credsPath, projectID string, maxFileSize int64) error {
+	ctx := context.Background()
+
+	// Resolve project ID before starting the server.
+	resolvedProjectID, err := server.ResolveProjectID(ctx, projectID, credsPath)
+	if err != nil {
+		return fmt.Errorf("project ID resolution failed: %w", err)
+	}
+
+	// Create the Firestore client that the upload handler will use.
+	fw, err := firestore.NewClient(ctx, firestore.Config{
+		CredentialsFile: credsPath,
+		ProjectID:       resolvedProjectID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create Firestore client: %w", err)
+	}
+
 	cfg := server.Config{
 		Port:            port,
 		CredentialsFile: credsPath,
-		ProjectID:       projectID,
+		ProjectID:       resolvedProjectID,
 		MaxFileSize:     maxFileSize,
 	}
 
-	srv, err := server.New(cfg)
+	srv, err := server.New(cfg, fw)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
