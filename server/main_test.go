@@ -2,7 +2,9 @@ package main
 
 import (
 	"os"
+	"syscall"
 	"testing"
+	"time"
 )
 
 func TestRunNoArgs(t *testing.T) {
@@ -89,7 +91,12 @@ func TestEnvStringEmpty(t *testing.T) {
 }
 
 func TestRunServerDispatch(t *testing.T) {
-	code := run([]string{"kindling", "server", "-port", "8080"})
+	go func() {
+		time.Sleep(200 * time.Millisecond)
+		p, _ := os.FindProcess(os.Getpid())
+		p.Signal(syscall.SIGTERM)
+	}()
+	code := run([]string{"kindling", "server", "-port", "9877"})
 	if code != 0 {
 		t.Errorf("expected exit code 0, got %d", code)
 	}
