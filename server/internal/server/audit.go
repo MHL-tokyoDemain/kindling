@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	mrand "math/rand"
 	"os"
 	"sync"
 	"time"
@@ -48,14 +50,16 @@ func (l *AuditLogger) Log(level, transactionID, filename, collectionPath, outcom
 	if l.closed {
 		return
 	}
-	l.enc.Encode(AuditEntry{
+	if err := l.enc.Encode(AuditEntry{
 		Timestamp:      time.Now().UTC().Format(time.RFC3339),
 		TransactionID:  transactionID,
 		Level:          level,
 		Filename:       filename,
 		CollectionPath: collectionPath,
 		Outcome:        outcome,
-	})
+	}); err != nil {
+		slog.Error("audit log write failed", "error", err)
+	}
 }
 
 func (l *AuditLogger) Close() error {
@@ -70,8 +74,18 @@ func (l *AuditLogger) Close() error {
 
 func TransactionID() string {
 	uuid := make([]byte, 16)
-	_, _ = rand.Read(uuid)
+	if _, err := rand.Read(uuid); err != nil {
+		slog.Error("crypto/rand.Read failed, falling back to math/rand", "error", err)
+		fillUUID(uuid)
+	}
 	uuid[6] = (uuid[6] & 0x0f) | 0x40
 	uuid[8] = (uuid[8] & 0x3f) | 0x80
 	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
+}
+
+func fillUUID(buf []byte) {
+	seeded := mrand.New(mrand.NewSource(time.Now().UnixNano()))
+	for i := range buf {
+		buf[i] = byte(seeded.Intn(256))
+	}
 }

@@ -70,7 +70,9 @@ func TestAuditLoggerMultipleEntries(t *testing.T) {
 		t.Fatalf("expected 3 lines, got %d", len(lines))
 	}
 	var e2 AuditEntry
-	json.Unmarshal([]byte(lines[1]), &e2)
+	if err := json.Unmarshal([]byte(lines[1]), &e2); err != nil {
+		t.Fatalf("unmarshal entry 2: %v", err)
+	}
 	if e2.Filename != "b.json" || e2.Outcome != "PARSE_001" {
 		t.Errorf("second entry mismatch: %+v", e2)
 	}
@@ -261,7 +263,9 @@ func TestHandleUploadWithAuditLogger(t *testing.T) {
 	var entries []AuditEntry
 	for _, line := range lines {
 		var e AuditEntry
-		json.Unmarshal([]byte(line), &e)
+		if err := json.Unmarshal([]byte(line), &e); err != nil {
+			t.Fatalf("unmarshal audit line: %v", err)
+		}
 		entries = append(entries, e)
 	}
 

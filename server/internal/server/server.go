@@ -149,17 +149,19 @@ func (s *Server) Start() error {
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	slog.Info("shutting down server")
+	// Drain HTTP server first so in-flight requests can finish logging.
+	err := s.httpSrv.Shutdown(ctx)
 	if s.fw != nil {
-		if err := s.fw.Close(); err != nil {
-			slog.Warn("error closing Firestore client", "error", err)
+		if cerr := s.fw.Close(); cerr != nil {
+			slog.Warn("error closing Firestore client", "error", cerr)
 		}
 	}
 	if s.auditLogger != nil {
-		if err := s.auditLogger.Close(); err != nil {
-			slog.Warn("error closing audit logger", "error", err)
+		if cerr := s.auditLogger.Close(); cerr != nil {
+			slog.Warn("error closing audit logger", "error", cerr)
 		}
 	}
-	return s.httpSrv.Shutdown(ctx)
+	return err
 }
 
 func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
