@@ -2,10 +2,24 @@ package main
 
 import (
 	"os"
-	"syscall"
+	"path/filepath"
 	"testing"
-	"time"
 )
+
+// isolateCredentials points credential discovery at an empty temp dir so that
+// Firestore client creation fails deterministically without external state.
+func isolateCredentials(t *testing.T) {
+	t.Helper()
+	t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(origDir) })
+}
 
 func TestRunNoArgs(t *testing.T) {
 	code := run([]string{"kindling"})
@@ -91,32 +105,49 @@ func TestEnvStringEmpty(t *testing.T) {
 }
 
 func TestRunServerDispatch(t *testing.T) {
-	t.Skip("integration test requiring Firestore credentials")
-	go func() {
-		time.Sleep(200 * time.Millisecond)
-		p, _ := os.FindProcess(os.Getpid())
-		p.Signal(syscall.SIGTERM)
-	}()
-	code := run([]string{"kindling", "server", "-port", "9877", "-project", "test-project"})
-	if code != 0 {
-		t.Errorf("expected exit code 0, got %d", code)
+	isolateCredentials(t)
+	// No credentials available, so RunServer fails during project resolution.
+	// This still exercises the server dispatch path in run().
+	code := run([]string{"kindling", "server", "-port", "9877", "-creds", "/nonexistent/creds.json"})
+	if code != 1 {
+		t.Errorf("expected exit code 1 on server startup failure, got %d", code)
+	}
+}
+
+func TestRunServerBadFlag(t *testing.T) {
+	code := run([]string{"kindling", "server", "-nonexistent-flag"})
+	if code != 2 {
+		t.Errorf("expected exit code 2 on bad flag, got %d", code)
 	}
 }
 
 func TestRunUploadDispatch(t *testing.T) {
-	t.Skip("integration test requiring Firestore credentials")
+	isolateCredentials(t)
 	dir := t.TempDir()
-	f1 := dir + "/a.json"
-	f2 := dir + "/b.txt"
+	f1 := filepath.Join(dir, "a.json")
 	if err := os.WriteFile(f1, []byte(`{"x":1}`), 0644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(f2, []byte("hello"), 0644); err != nil {
-		t.Fatal(err)
-	}
 
-	code := run([]string{"kindling", "upload", "-collection", "test-col", "-files", f1 + "," + f2, "-max-file-size", "1048576"})
-	if code != 0 {
-		t.Errorf("expected exit code 0, got %d", code)
+	// No credentials available, so RunUpload fails at Firestore client creation
+	// and returns exit code 3. This exercises the upload dispatch path in run().
+	code := run([]string{"kindling", "upload", "-collection", "test-col", "-files", f1, "-creds", "/nonexistent/creds.json"})
+	if code != 3 {
+		t.Errorf("expected exit code 3 on Firestore client failure, got %d", code)
+	}
+}
+
+func TestRunUploadBadFlag(t *testing.T) {
+	code := run([]string{"kindling", "upload", "-nonexistent-flag"})
+	if code != 2 {
+		t.Errorf("expected exit code 2 on bad flag, got %d", code)
+	}
+}
+
+func TestRunUploadDispatchMissingCollection(t *testing.T) {
+	// Upload dispatch with no collection flag returns validation exit code 2.
+	code := run([]string{"kindling", "upload", "-files", "/tmp/whatever.json"})
+	if code != 2 {
+		t.Errorf("expected exit code 2 for missing collection, got %d", code)
 	}
 }

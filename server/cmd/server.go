@@ -66,6 +66,13 @@ func RunUpload(collection string, files []string, credsPath, projectID string, m
 	}
 	defer firestoreClient.Close()
 
+	return uploadFiles(ctx, firestoreClient, collection, files, maxFileSize)
+}
+
+// uploadFiles performs the batch upload against an injected FirestoreWriter.
+// It is separated from RunUpload so the upload logic can be tested without a
+// live Firestore connection.
+func uploadFiles(ctx context.Context, firestoreClient firestore.FirestoreWriter, collection string, files []string, maxFileSize int64) (int, error) {
 	uploaded := make([]types.UploadResult, 0)
 	failed := make([]types.UploadResult, 0)
 
